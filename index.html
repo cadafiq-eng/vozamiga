@@ -250,9 +250,47 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 .amp-gain-row {
-  display:flex; align-items:center; gap:12px; width:100%; max-width:300px;
+  display:flex; align-items:center; gap:12px; width:100%; max-width:340px;
 }
-.amp-gain-lbl { font-size:12px; color:var(--muted); white-space:nowrap; }
+.amp-gain-lbl { font-size:12px; color:var(--muted); white-space:nowrap; width:68px; flex-shrink:0; }
+
+/* Panel anti-feedback */
+.amp-panel {
+  background:var(--panel); border:1px solid rgba(0,212,170,0.15);
+  border-radius:var(--r); padding:12px 14px;
+  display:flex; flex-direction:column; gap:10px;
+  width:100%; max-width:340px;
+}
+.amp-panel-title {
+  font-size:11px; font-weight:700; color:var(--accent);
+  letter-spacing:0.8px; text-transform:uppercase;
+}
+
+/* Ayuda expandible amplificador */
+.amp-help { width:100%; max-width:340px; }
+.amp-help-toggle {
+  width:100%; background:rgba(245,166,35,0.1);
+  border:1px solid rgba(245,166,35,0.25); border-radius:12px;
+  color:var(--gold); font-size:13px; font-weight:600;
+  padding:10px 14px; cursor:pointer; text-align:left;
+  transition:background 0.15s;
+}
+.amp-help-toggle.open { border-radius:12px 12px 0 0; }
+.amp-help-toggle:active { background:rgba(245,166,35,0.2); }
+.amp-help-body {
+  display:none; flex-direction:column;
+  background:var(--panel); border:1px solid rgba(245,166,35,0.15);
+  border-top:none; border-radius:0 0 12px 12px; overflow:hidden;
+}
+.amp-help-body.open { display:flex; }
+.amp-help-row {
+  display:flex; flex-direction:column; gap:2px;
+  padding:9px 14px; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.amp-help-label { font-size:11px; color:var(--muted); }
+.amp-help-vals  { font-size:13px; color:var(--accent); font-weight:600; }
+.amp-help-divider { height:1px; background:rgba(245,166,35,0.15); margin:2px 0; }
+.amp-help-tip   { font-size:12px; color:var(--gold); padding:10px 14px; line-height:1.5; }
 
 .amp-tip {
   background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.2);
@@ -366,7 +404,7 @@ input[type=range]::-webkit-slider-thumb {
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab active" data-view="write"><span class="tab-icon">⌨️</span>Escribir</button>
+  <button class="tab" data-view="write"><span class="tab-icon">⌨️</span>Escribir</button>
   <button class="tab"        data-view="amp">  <span class="tab-icon">🎙️</span>Amplificar</button>
   <button class="tab"        data-view="phrases"><span class="tab-icon">💬</span>Frases</button>
   <button class="tab"        data-view="history"><span class="tab-icon">📋</span>Historial</button>
@@ -375,7 +413,7 @@ input[type=range]::-webkit-slider-thumb {
 <main>
 
 <!-- ══ ESCRIBIR ══ -->
-<div class="view active" id="view-write">
+<div class="view" id="view-write">
   <div class="write-wrap">
 
     <!-- Selector de voz -->
@@ -487,12 +525,61 @@ input[type=range]::-webkit-slider-thumb {
     <!-- Ganancia -->
     <div class="amp-gain-row">
       <span class="amp-gain-lbl">🔊 Amplificación</span>
-      <input type="range" id="gainSlider" min="1" max="4" step="0.5" value="2" style="flex:1">
-      <span style="font-size:12px;color:var(--accent);width:28px;text-align:right" id="gainVal">×2</span>
+      <input type="range" id="gainSlider" min="1" max="3" step="0.25" value="1.5" style="flex:1">
+      <span style="font-size:12px;color:var(--accent);width:32px;text-align:right" id="gainVal">×1.5</span>
     </div>
 
-    <div class="amp-tip">
-      ⚠️ Acerca el teléfono a la persona que habla y activa el altavoz. El volumen del sistema debe estar al máximo.
+    <!-- Panel anti-feedback -->
+    <div class="amp-panel">
+      <div class="amp-panel-title">🛡️ Anti-chirrido</div>
+
+      <!-- Retardo -->
+      <div class="amp-gain-row">
+        <span class="amp-gain-lbl">⏱ Retardo</span>
+        <input type="range" id="delaySlider" min="0.05" max="0.4" step="0.05" value="0.15" style="flex:1">
+        <span style="font-size:12px;color:var(--accent);width:38px;text-align:right" id="delayVal">150ms</span>
+      </div>
+
+      <!-- Umbral de silencio (gate) -->
+      <div class="amp-gain-row">
+        <span class="amp-gain-lbl">🚪 Gate</span>
+        <input type="range" id="gateSlider" min="0" max="0.15" step="0.005" value="0.04" style="flex:1">
+        <span style="font-size:12px;color:var(--accent);width:38px;text-align:right" id="gateVal">4%</span>
+      </div>
+
+      <!-- Filtro paso-bajo (corta agudos que chirrían) -->
+      <div class="amp-gain-row">
+        <span class="amp-gain-lbl">✂️ Filtro</span>
+        <input type="range" id="filterSlider" min="1000" max="8000" step="500" value="4000" style="flex:1">
+        <span style="font-size:12px;color:var(--accent);width:42px;text-align:right" id="filterVal">4kHz</span>
+      </div>
+    </div>
+
+    <!-- Ayuda anti-chirrido expandible -->
+    <div class="amp-help">
+      <button class="amp-help-toggle" id="ampHelpBtn">💡 ¿Chirrido? Ver ajustes recomendados</button>
+      <div class="amp-help-body" id="ampHelpBody">
+        <div class="amp-help-row">
+          <span class="amp-help-label">Si chirrí­a desde el inicio</span>
+          <span class="amp-help-vals">Amplificación ×1.25 · Gate 6%</span>
+        </div>
+        <div class="amp-help-row">
+          <span class="amp-help-label">Si chirrí­a después de unos segundos</span>
+          <span class="amp-help-vals">Retardo 200 ms · Filtro 3 kHz</span>
+        </div>
+        <div class="amp-help-row">
+          <span class="amp-help-label">Chirrido agudo / silbido</span>
+          <span class="amp-help-vals">Filtro ↓ a 2–3 kHz</span>
+        </div>
+        <div class="amp-help-row">
+          <span class="amp-help-label">Voz se corta o suena entrecortada</span>
+          <span class="amp-help-vals">Gate ↓ a 2–3%</span>
+        </div>
+        <div class="amp-help-divider"></div>
+        <div class="amp-help-tip">
+          ✅ Solución definitiva: usar auriculares con cable — el micrófono queda lejos del altavoz y el chirrido desaparece por completo.
+        </div>
+      </div>
     </div>
 
   </div>
@@ -670,42 +757,90 @@ function updateTurnPill() {
 }
 
 // ══════════════════════════════════════
-// AMPLIFICADOR (Web Audio API)
+// AMPLIFICADOR CON ANTI-FEEDBACK
 // ══════════════════════════════════════
-let ampActive = false;
-let micStream = null;
-let audioCtx  = null;
-let gainNode  = null;
-let analyser  = null;
-let vizFrame  = null;
+let ampActive  = false;
+let micStream  = null;
+let audioCtx   = null;
+let gainNode   = null;
+let delayNode  = null;
+let filterNode = null;
+let analyser   = null;
+let vizFrame   = null;
+let gateActive = false;  // estado actual del noise gate
+let gateTimer  = null;
 
 async function startAmp() {
   try {
+    // Activar cancelación de eco nativa del dispositivo
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      audio: {
+        echoCancellation:  true,   // ← activado ahora (ayuda contra feedback)
+        noiseSuppression:  true,
+        autoGainControl:   false
+      }
     });
     micStream = stream;
     audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+
     const src = audioCtx.createMediaStreamSource(stream);
-    gainNode  = audioCtx.createGain();
-    analyser  = audioCtx.createAnalyser();
+
+    // 1. GAIN — amplificación controlada
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = parseFloat(document.getElementById('gainSlider').value);
+
+    // 2. DELAY — pequeño retardo que rompe el ciclo de retroalimentación
+    delayNode = audioCtx.createDelay(0.5);
+    delayNode.delayTime.value = parseFloat(document.getElementById('delaySlider').value);
+
+    // 3. FILTRO PASO-BAJO — corta las frecuencias altas que chirrían (>4kHz típicamente)
+    filterNode = audioCtx.createBiquadFilter();
+    filterNode.type = 'lowpass';
+    filterNode.frequency.value = parseFloat(document.getElementById('filterSlider').value);
+    filterNode.Q.value = 0.7;
+
+    // 4. ANALYSER — para visualizador de barras
+    analyser = audioCtx.createAnalyser();
     analyser.fftSize = 64;
 
-    const gain = parseFloat(document.getElementById('gainSlider').value);
-    gainNode.gain.value = gain;
+    // 5. NOISE GATE — ScriptProcessor que silencia cuando hay silencio
+    //    (evita que el ruido de fondo alimente el loop)
+    const bufSize = 2048;
+    const gateProc = audioCtx.createScriptProcessor(bufSize, 1, 1);
+    const gateThreshold = () => parseFloat(document.getElementById('gateSlider').value);
 
-    // Encadenar: mic → gain → analyser → altavoz
-    src.connect(gainNode);
-    gainNode.connect(analyser);
-    gainNode.connect(audioCtx.destination);
+    gateProc.onaudioprocess = (e) => {
+      const inp = e.inputBuffer.getChannelData(0);
+      const out = e.outputBuffer.getChannelData(0);
+      // RMS del buffer
+      let sum = 0;
+      for (let i = 0; i < inp.length; i++) sum += inp[i] * inp[i];
+      const rms = Math.sqrt(sum / inp.length);
+      const open = rms > gateThreshold();
+      // Si el gate está cerrado, salida = silencio
+      for (let i = 0; i < out.length; i++) out[i] = open ? inp[i] : 0;
+      // Indicador visual
+      if (open !== gateActive) {
+        gateActive = open;
+        document.getElementById('ampIcon').textContent = open ? '🔊' : '🎙️';
+      }
+    };
+
+    // Cadena: mic → gateProc → gainNode → delayNode → filterNode → analyser → destino
+    src.connect(gateProc);
+    gateProc.connect(gainNode);
+    gainNode.connect(delayNode);
+    delayNode.connect(filterNode);
+    filterNode.connect(analyser);
+    filterNode.connect(audioCtx.destination);
 
     ampActive = true;
     setAmpUI(true);
     startViz();
 
-    if (cfg.vibrate && navigator.vibrate) navigator.vibrate([50,30,50]);
+    if (cfg.vibrate && navigator.vibrate) navigator.vibrate([50, 30, 50]);
   } catch(e) {
-    toast('⚠️ Sin acceso al micrófono — revisa permisos');
+    toast('⚠️ Sin acceso al micrófono — revisa permisos en Chrome');
   }
 }
 
@@ -713,8 +848,9 @@ function stopAmp() {
   if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   if (audioCtx)  { audioCtx.close(); audioCtx = null; }
   if (vizFrame)  { cancelAnimationFrame(vizFrame); vizFrame = null; }
-  gainNode = null; analyser = null;
-  ampActive = false;
+  gainNode = delayNode = filterNode = analyser = null;
+  gateActive = false;
+  ampActive  = false;
   setAmpUI(false);
 }
 
@@ -725,17 +861,15 @@ function setAmpUI(active) {
   const sub   = document.getElementById('ampSub');
   btn.classList.toggle('active', active);
   if (active) {
-    btn.textContent = '⏹';
-    icon.textContent  = '🔊';
+    btn.textContent   = '⏹';
     title.textContent = 'Amplificando…';
-    sub.textContent   = 'Captando audio del micrófono y reproduciéndolo en el altavoz. Pulsa para detener.';
+    sub.textContent   = 'Captando audio. El ícono 🔊 indica cuando entra sonido. Pulsa para detener.';
   } else {
-    btn.textContent = '🎙️';
+    btn.textContent   = '🎙️';
     icon.textContent  = '🎙️';
     title.textContent = 'Modo Amplificador';
     sub.textContent   = 'Pulsa el botón para captar la voz de la otra persona y reproducirla más fuerte por el altavoz.';
-    // Resetear barras
-    document.querySelectorAll('.viz-bar').forEach(b => b.style.height='4px');
+    document.querySelectorAll('.viz-bar').forEach(b => b.style.height = '4px');
   }
 }
 
@@ -753,10 +887,36 @@ function startViz() {
   frame();
 }
 
-// Actualizar ganancia en tiempo real
+// Sliders del amplificador — actualizan nodos en tiempo real
 document.getElementById('gainSlider').addEventListener('input', function() {
   document.getElementById('gainVal').textContent = '×' + this.value;
   if (gainNode) gainNode.gain.value = parseFloat(this.value);
+});
+document.getElementById('delaySlider').addEventListener('input', function() {
+  const ms = Math.round(parseFloat(this.value) * 1000);
+  document.getElementById('delayVal').textContent = ms + 'ms';
+  if (delayNode) delayNode.delayTime.value = parseFloat(this.value);
+});
+document.getElementById('filterSlider').addEventListener('input', function() {
+  const khz = (parseFloat(this.value) / 1000).toFixed(1);
+  document.getElementById('filterVal').textContent = khz + 'kHz';
+  if (filterNode) filterNode.frequency.value = parseFloat(this.value);
+});
+document.getElementById('gateSlider').addEventListener('input', function() {
+  const pct = Math.round(parseFloat(this.value) * 100);
+  document.getElementById('gateVal').textContent = pct + '%';
+  // El gate lee el slider directamente en onaudioprocess
+});
+
+// Toggle ayuda anti-chirrido
+document.getElementById('ampHelpBtn').addEventListener('click', () => {
+  const body = document.getElementById('ampHelpBody');
+  const btn  = document.getElementById('ampHelpBtn');
+  const open = body.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  btn.textContent = open
+    ? '💡 Ocultar ajustes recomendados ▲'
+    : '💡 ¿Chirrido? Ver ajustes recomendados ▼';
 });
 
 document.getElementById('ampBtn').addEventListener('click', () => {
@@ -869,8 +1029,8 @@ function toast(msg) {
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
-  // Detener amplificador al salir de esa pestaña
   if (name!=='amp' && ampActive) stopAmp();
+  localStorage.setItem('va_tab', name);
 }
 
 // ══════════════════════════════════════
@@ -964,6 +1124,9 @@ applyPitchVisibility();
 updateCharCount();
 updateVoiceBtns();
 updateTurnPill();
+
+// Restaurar última pestaña usada (o 'write' si es la primera vez)
+switchTab(localStorage.getItem('va_tab') || 'write');
 
 // ══════════════════════════════════════
 // SERVICE WORKER (PWA offline)
