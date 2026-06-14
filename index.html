@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>VozAmiga</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  --bg:      #0f0f1a;
+  --surface: #1a1a2e;
+  --panel:   #16213e;
+  --accent:  #00d4aa;
+  --gold:    #f5a623;
+  --text:    #e8eaf0;
+  --muted:   #7a7f9a;
+  --danger:  #e74c6f;
+  --purple:  #a78bfa;
+  --r:       16px;
+  --font:    'Segoe UI', system-ui, sans-serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body {
+  background:var(--bg); color:var(--text); font-family:var(--font);
+  height:100dvh; display:flex; flex-direction:column; overflow:hidden; user-select:none;
+}
+
+/* HEADER */
+header {
+  background:var(--surface); padding:10px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid rgba(0,212,170,0.15); flex-shrink:0;
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon {
+  width:34px; height:34px; background:var(--accent);
+  border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px;
+}
+.logo-text { font-size:17px; font-weight:700; }
+.logo-sub  { font-size:10px; color:var(--muted); }
+.hdr-btns  { display:flex; gap:6px; }
+.icon-btn {
+  background:rgba(255,255,255,0.06); border:none; border-radius:10px;
+  padding:7px 10px; color:var(--text); font-size:17px; cursor:pointer;
+}
+.icon-btn:active { background:rgba(255,255,255,0.14); }
+
+/* TABS */
+.tabs {
+  display:flex; background:var(--surface);
+  border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0;
+}
+.tab {
+  flex:1; padding:10px 4px; text-align:center; font-size:11px; font-weight:600;
+  color:var(--muted); cursor:pointer; border:none; background:transparent;
+  border-bottom:2px solid transparent; transition:all 0.2s;
+}
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.tab-icon { font-size:16px; display:block; margin-bottom:2px; }
+
+/* MAIN */
+main { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+.view { display:none; flex:1; flex-direction:column; overflow:hidden; }
+.view.active { display:flex; }
+
+/* ═══ VIEW: ESCRIBIR ═══ */
+.write-wrap {
+  flex:1; display:flex; flex-direction:column;
+  padding:12px; gap:10px; overflow:hidden;
+}
+
+/* Selector de voz */
+.voice-selector {
+  background:var(--panel); border-radius:var(--r); padding:12px;
+  display:flex; flex-direction:column; gap:8px; flex-shrink:0;
+}
+.voice-selector-title {
+  font-size:11px; color:var(--muted); font-weight:600;
+  letter-spacing:0.8px; text-transform:uppercase;
+}
+.voice-row { display:flex; gap:8px; align-items:center; }
+.vbtn {
+  flex:1; background:rgba(255,255,255,0.05);
+  border:2px solid rgba(255,255,255,0.08);
+  border-radius:12px; padding:10px 8px;
+  color:var(--text); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  transition:all 0.18s;
+}
+.vbtn.active-f { border-color:var(--accent); background:rgba(0,212,170,0.1); }
+.vbtn.active-m { border-color:var(--purple); background:rgba(167,139,250,0.1); }
+.vbtn:active   { transform:scale(0.96); }
+.vbtn-icon  { font-size:22px; line-height:1; }
+.vbtn-label { font-size:12px; font-weight:700; }
+.vbtn-pitch { font-size:10px; color:var(--muted); }
+
+.alt-btn {
+  width:46px; height:46px; flex-shrink:0;
+  background:rgba(255,255,255,0.06); border:none;
+  border-radius:50%; font-size:20px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s;
+}
+.alt-btn.on {
+  background:rgba(245,166,35,0.15);
+  box-shadow:0 0 0 2px var(--gold);
+  animation:spin 3s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Pitch sliders ocultos/visibles */
+.pitch-row {
+  display:none; gap:10px; align-items:center;
+}
+.pitch-row.show { display:flex; }
+.pitch-lbl { font-size:11px; color:var(--muted); width:62px; flex-shrink:0; }
+.pitch-val { font-size:11px; color:var(--accent); width:28px; text-align:right; flex-shrink:0; }
+input[type=range] {
+  flex:1; -webkit-appearance:none; height:4px;
+  background:rgba(255,255,255,0.1); border-radius:2px; outline:none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:18px; height:18px;
+  border-radius:50%; background:var(--accent); cursor:pointer;
+}
+
+/* Área de texto */
+.textarea-wrap { flex:1; position:relative; display:flex; flex-direction:column; min-height:0; }
+#mainText {
+  flex:1; background:var(--panel);
+  border:2px solid rgba(0,212,170,0.2); border-radius:var(--r);
+  padding:14px; color:var(--text); font-size:22px; line-height:1.5;
+  resize:none; outline:none; font-family:var(--font);
+  transition:border-color 0.2s; min-height:0;
+}
+#mainText:focus { border-color:var(--accent); }
+#mainText::placeholder { color:var(--muted); font-size:17px; }
+.char-count { position:absolute; bottom:8px; right:12px; font-size:11px; color:var(--muted); }
+
+/* Controles de volumen/velocidad */
+.av-controls {
+  background:var(--panel); border-radius:var(--r);
+  padding:10px 12px; display:flex; flex-direction:column; gap:8px; flex-shrink:0;
+}
+.sl-row { display:flex; align-items:center; gap:10px; }
+.sl-lbl { font-size:11px; color:var(--muted); width:68px; flex-shrink:0; }
+.sl-val { font-size:11px; color:var(--accent); width:34px; text-align:right; flex-shrink:0; }
+
+/* Botón HABLAR */
+.speak-btn {
+  width:100%; padding:16px;
+  background:var(--accent); color:#0f0f1a;
+  border:none; border-radius:var(--r);
+  font-size:18px; font-weight:800; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:all 0.15s; flex-shrink:0;
+}
+.speak-btn:active { transform:scale(0.97); }
+.speak-btn.speaking {
+  background:var(--danger); color:#fff;
+  animation:pulse 0.9s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(231,76,111,0.4); }
+  50%      { box-shadow:0 0 0 10px rgba(231,76,111,0); }
+}
+.vol-wave { display:none; align-items:center; gap:3px; }
+.vol-wave.on { display:flex; }
+.vol-wave span {
+  display:block; width:3px; background:currentColor;
+  border-radius:2px; animation:wv 0.6s ease-in-out infinite;
+}
+.vol-wave span:nth-child(1){height:8px;animation-delay:0s}
+.vol-wave span:nth-child(2){height:14px;animation-delay:0.1s}
+.vol-wave span:nth-child(3){height:10px;animation-delay:0.2s}
+@keyframes wv { 0%,100%{transform:scaleY(0.5)} 50%{transform:scaleY(1)} }
+
+/* Turno indicador */
+.turn-pill {
+  display:none; align-items:center; gap:7px;
+  background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3);
+  border-radius:20px; padding:6px 14px; font-size:12px; color:var(--gold);
+  flex-shrink:0; justify-content:center;
+}
+.turn-pill.show { display:flex; }
+.turn-dot { width:7px; height:7px; border-radius:50%; background:var(--gold); animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* Frases rápidas */
+.qbar {
+  display:flex; gap:7px; flex-shrink:0;
+  overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
+}
+.qbar::-webkit-scrollbar { display:none; }
+.qbtn {
+  background:var(--panel); border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px; padding:7px 13px;
+  color:var(--text); font-size:12px; white-space:nowrap;
+  cursor:pointer; flex-shrink:0;
+}
+.qbtn:active { background:rgba(0,212,170,0.15); border-color:var(--accent); color:var(--accent); }
+
+/* ═══ VIEW: AMPLIFICAR ═══ */
+.amp-wrap {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:20px; gap:20px;
+}
+.amp-status {
+  text-align:center; display:flex; flex-direction:column;
+  align-items:center; gap:12px;
+}
+.amp-icon { font-size:64px; line-height:1; }
+.amp-title { font-size:22px; font-weight:700; }
+.amp-sub   { font-size:14px; color:var(--muted); max-width:260px; text-align:center; line-height:1.5; }
+
+/* Visualizador de audio */
+.audio-viz {
+  display:flex; align-items:center; gap:4px;
+  height:60px; width:200px; justify-content:center;
+}
+.viz-bar {
+  width:6px; background:var(--accent);
+  border-radius:3px; transition:height 0.05s;
+  min-height:4px;
+}
+
+/* Botón amplificar grande */
+.amp-btn {
+  width:140px; height:140px; border-radius:50%;
+  background:var(--panel); border:3px solid rgba(0,212,170,0.3);
+  color:var(--text); font-size:48px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; flex-shrink:0;
+}
+.amp-btn.active {
+  background:rgba(0,212,170,0.15);
+  border-color:var(--accent);
+  box-shadow:0 0 30px rgba(0,212,170,0.3);
+  animation:amp-pulse 1.2s ease-in-out infinite;
+}
+.amp-btn:active { transform:scale(0.95); }
+@keyframes amp-pulse {
+  0%,100% { box-shadow:0 0 20px rgba(0,212,170,0.2); }
+  50%      { box-shadow:0 0 45px rgba(0,212,170,0.5); }
+}
+
+.amp-gain-row {
+  display:flex; align-items:center; gap:12px; width:100%; max-width:300px;
+}
+.amp-gain-lbl { font-size:12px; color:var(--muted); white-space:nowrap; }
+
+.amp-tip {
+  background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.2);
+  border-radius:12px; padding:12px 16px;
+  font-size:12px; color:var(--gold); text-align:center;
+  max-width:300px; line-height:1.5;
+}
+
+/* ═══ VIEW: FRASES ═══ */
+.phrases-wrap { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:0; }
+.cat-title {
+  font-size:10px; font-weight:700; color:var(--muted);
+  letter-spacing:1.2px; text-transform:uppercase; padding:10px 4px 6px;
+}
+.phrase-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:4px; }
+.phrase-card {
+  background:var(--panel); border:1px solid rgba(255,255,255,0.07);
+  border-radius:var(--r); padding:13px 10px;
+  cursor:pointer; transition:all 0.15s;
+  text-align:center; display:flex; flex-direction:column; align-items:center; gap:5px;
+}
+.phrase-card:active { background:rgba(0,212,170,0.1); border-color:var(--accent); transform:scale(0.97); }
+.phrase-card.big {
+  grid-column:span 2; flex-direction:row; text-align:left; gap:12px; padding:14px;
+  border-color:rgba(231,76,111,0.3); background:rgba(231,76,111,0.08);
+}
+.pe { font-size:24px; line-height:1; }
+.pt { font-size:13px; line-height:1.3; }
+.phrase-card.big .pt { font-size:15px; font-weight:600; }
+
+/* ═══ VIEW: HISTORIAL ═══ */
+.hist-wrap { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+.hist-header {
+  display:flex; justify-content:space-between; align-items:center; padding:2px 2px 6px;
+}
+.hist-title { font-size:12px; font-weight:600; color:var(--muted); }
+.clear-btn { font-size:12px; color:var(--danger); background:none; border:none; cursor:pointer; padding:4px; }
+.hist-item {
+  background:var(--panel); border-radius:var(--r); padding:11px 13px;
+  display:flex; align-items:center; gap:10px; cursor:pointer;
+  border:1px solid rgba(255,255,255,0.05); transition:all 0.15s;
+}
+.hist-item:active { background:rgba(0,212,170,0.08); border-color:var(--accent); }
+.hist-avatar { font-size:22px; flex-shrink:0; }
+.hist-text   { flex:1; font-size:14px; line-height:1.4; }
+.hist-meta   { font-size:10px; color:var(--muted); text-align:right; flex-shrink:0; line-height:1.6; }
+.hist-empty  {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:10px;
+  color:var(--muted); font-size:14px; text-align:center;
+}
+.hist-empty .ei { font-size:48px; opacity:0.3; }
+
+/* SETTINGS */
+.settings-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:flex-end;
+}
+.settings-overlay.open { display:flex; }
+.settings-panel {
+  background:var(--surface); width:100%; border-radius:20px 20px 0 0;
+  padding:20px 20px 36px; display:flex; flex-direction:column; gap:14px;
+  animation:slideUp 0.25s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.set-title { font-size:15px; font-weight:700; }
+.set-row { display:flex; justify-content:space-between; align-items:center; }
+.set-lbl { font-size:14px; }
+.set-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.toggle {
+  width:44px; height:24px; background:rgba(255,255,255,0.1);
+  border-radius:12px; position:relative; cursor:pointer; border:none; transition:background 0.2s;
+}
+.toggle.on { background:var(--accent); }
+.toggle::after {
+  content:''; position:absolute; width:20px; height:20px; top:2px; left:2px;
+  background:white; border-radius:50%; transition:transform 0.2s;
+}
+.toggle.on::after { transform:translateX(20px); }
+.set-close {
+  margin-top:4px; width:100%; padding:14px;
+  background:rgba(255,255,255,0.06); color:var(--text);
+  border:none; border-radius:var(--r); font-size:15px; cursor:pointer;
+}
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:20px; left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--accent); color:#0f0f1a;
+  padding:9px 18px; border-radius:20px; font-size:13px; font-weight:600;
+  transition:transform 0.3s ease; z-index:200; white-space:nowrap;
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔊</div>
+    <div>
+      <div class="logo-text">VozAmiga</div>
+      <div class="logo-sub">Comunicación aumentativa</div>
+    </div>
+  </div>
+  <div class="hdr-btns">
+    <button class="icon-btn" id="btnSettings">⚙️</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" data-view="write"><span class="tab-icon">⌨️</span>Escribir</button>
+  <button class="tab"        data-view="amp">  <span class="tab-icon">🎙️</span>Amplificar</button>
+  <button class="tab"        data-view="phrases"><span class="tab-icon">💬</span>Frases</button>
+  <button class="tab"        data-view="history"><span class="tab-icon">📋</span>Historial</button>
+</div>
+
+<main>
+
+<!-- ══ ESCRIBIR ══ -->
+<div class="view active" id="view-write">
+  <div class="write-wrap">
+
+    <!-- Selector de voz -->
+    <div class="voice-selector">
+      <div class="voice-selector-title">🎙 Voz que hablará</div>
+      <div class="voice-row">
+        <button class="vbtn active-f" id="vbtnF">
+          <span class="vbtn-icon">👩</span>
+          <span class="vbtn-label">Mujer</span>
+          <span class="vbtn-pitch" id="pitchF-label">Tono 1.4</span>
+        </button>
+        <button class="alt-btn" id="altBtn" title="Alternar automáticamente">🔄</button>
+        <button class="vbtn" id="vbtnM">
+          <span class="vbtn-icon">👨</span>
+          <span class="vbtn-label">Hombre</span>
+          <span class="vbtn-pitch" id="pitchM-label">Tono 0.7</span>
+        </button>
+      </div>
+      <!-- Ajuste fino de tono -->
+      <div class="pitch-row" id="pitchFRow">
+        <span class="pitch-lbl">👩 Tono mujer</span>
+        <input type="range" id="pitchF" min="0.8" max="2.0" step="0.1" value="1.4">
+        <span class="pitch-val" id="pitchFVal">1.4</span>
+      </div>
+      <div class="pitch-row" id="pitchMRow">
+        <span class="pitch-lbl">👨 Tono hombre</span>
+        <input type="range" id="pitchM" min="0.3" max="1.0" step="0.1" value="0.7">
+        <span class="pitch-val" id="pitchMVal">0.7</span>
+      </div>
+    </div>
+
+    <!-- Texto -->
+    <div class="textarea-wrap">
+      <textarea id="mainText" placeholder="Escribe aquí lo que quieres decir…" maxlength="500" autocomplete="off" spellcheck="true"></textarea>
+      <span class="char-count" id="charCount">0/500</span>
+    </div>
+
+    <!-- Volumen y velocidad -->
+    <div class="av-controls">
+      <div class="sl-row">
+        <span class="sl-lbl">🔊 Volumen</span>
+        <input type="range" id="slVol" min="0.1" max="1" step="0.05" value="1">
+        <span class="sl-val" id="slVolV">100%</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-lbl">🐢 Velocidad</span>
+        <input type="range" id="slRate" min="0.4" max="1.6" step="0.1" value="0.85">
+        <span class="sl-val" id="slRateV">0.85×</span>
+      </div>
+    </div>
+
+    <!-- Indicador de turno -->
+    <div class="turn-pill" id="turnPill">
+      <div class="turn-dot"></div>
+      <span id="turnText">Siguiente: 👩 Mujer</span>
+    </div>
+
+    <!-- Botón hablar -->
+    <button class="speak-btn" id="speakBtn">
+      <span id="spIcon">▶</span>
+      <span id="spText">HABLAR EN VOZ ALTA</span>
+      <div class="vol-wave" id="volWave"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Frases rápidas -->
+    <div class="qbar">
+      <button class="qbtn" data-p="Por favor">Por favor</button>
+      <button class="qbtn" data-p="Gracias">Gracias</button>
+      <button class="qbtn" data-p="Sí">Sí</button>
+      <button class="qbtn" data-p="No">No</button>
+      <button class="qbtn" data-p="Espera un momento">Espera</button>
+      <button class="qbtn" data-p="No te entendí bien">No entendí</button>
+      <button class="qbtn" data-p="¿Me puedes repetir?">¿Repite?</button>
+      <button class="qbtn" data-p="Necesito ayuda">Ayuda</button>
+      <button class="qbtn" data-p="¿Cuánto cuesta?">¿Cuánto?</button>
+      <button class="qbtn" data-p="¿Dónde está el baño?">Baño</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ AMPLIFICAR ══ -->
+<div class="view" id="view-amp">
+  <div class="amp-wrap">
+
+    <div class="amp-status">
+      <div class="amp-icon" id="ampIcon">🎙️</div>
+      <div class="amp-title" id="ampTitle">Modo Amplificador</div>
+      <div class="amp-sub" id="ampSub">
+        Pulsa el botón para captar la voz de la otra persona y reproducirla más fuerte por el altavoz.
+      </div>
+    </div>
+
+    <!-- Visualizador de barras -->
+    <div class="audio-viz" id="audioViz">
+      <div class="viz-bar" style="height:4px"></div>
+      <div class="viz-bar" style="height:4px"></div>
+      <div class="viz-bar" style="height:4px"></div>
+      <div class="viz-bar" style="height:4px"></div>
+      <div class="viz-bar" style="height:4px"></div>
+      <div class="viz-bar" style="height:4px"></div>
+      <div class="viz-bar" style="height:4px"></div>
+      <div class="viz-bar" style="height:4px"></div>
+    </div>
+
+    <!-- Botón grande -->
+    <button class="amp-btn" id="ampBtn">🎙️</button>
+
+    <!-- Ganancia -->
+    <div class="amp-gain-row">
+      <span class="amp-gain-lbl">🔊 Amplificación</span>
+      <input type="range" id="gainSlider" min="1" max="4" step="0.5" value="2" style="flex:1">
+      <span style="font-size:12px;color:var(--accent);width:28px;text-align:right" id="gainVal">×2</span>
+    </div>
+
+    <div class="amp-tip">
+      ⚠️ Acerca el teléfono a la persona que habla y activa el altavoz. El volumen del sistema debe estar al máximo.
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ FRASES ══ -->
+<div class="view" id="view-phrases">
+  <div class="phrases-wrap" id="phrasesGrid"></div>
+</div>
+
+<!-- ══ HISTORIAL ══ -->
+<div class="view" id="view-history">
+  <div class="hist-wrap" id="histList"></div>
+</div>
+
+</main>
+
+<!-- SETTINGS -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-panel">
+    <div class="set-title">⚙️ Configuración</div>
+    <div class="set-row">
+      <div><div class="set-lbl">Enter para hablar</div><div class="set-sub">Atajo desde teclado</div></div>
+      <button class="toggle on" id="togEnter"></button>
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Limpiar texto al terminar</div><div class="set-sub">Borra tras hablar</div></div>
+      <button class="toggle" id="togClear"></button>
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Guardar historial</div><div class="set-sub">Últimos 50 mensajes</div></div>
+      <button class="toggle on" id="togHist"></button>
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Vibrar al hablar</div><div class="set-sub">Confirmación táctil</div></div>
+      <button class="toggle on" id="togVib"></button>
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Ajuste fino de tono</div><div class="set-sub">Mostrar sliders de pitch ♀/♂</div></div>
+      <button class="toggle" id="togPitch"></button>
+    </div>
+    <button class="set-close" id="btnCloseSet">Cerrar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════
+const cfg = JSON.parse(localStorage.getItem('va_cfg') || JSON.stringify({
+  enterSpeak: true, clearAfter: false, saveHist: true, vibrate: true, showPitch: false
+}));
+const history = JSON.parse(localStorage.getItem('va_hist') || '[]');
+
+let ttsActive   = false;
+let altMode     = false;   // alternancia automática
+let nextGender  = 'f';     // 'f' | 'm'
+let manualGender= 'f';
+
+// Configuración de pitch por género (con una sola voz del sistema)
+let pitchF = 1.4;
+let pitchM = 0.7;
+
+// ══════════════════════════════════════
+// TTS
+// ══════════════════════════════════════
+const synth = window.speechSynthesis;
+
+function getBestVoice() {
+  const all = synth.getVoices();
+  return all.find(v => v.lang.startsWith('es')) || all[0] || null;
+}
+synth.onvoiceschanged = () => {};  // simplemente asegurar carga
+
+function speak(text, gender) {
+  if (!text.trim()) { toast('Escribe algo primero 📝'); return; }
+  if (ttsActive)    { stopTTS(); return; }
+
+  synth.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  const voice = getBestVoice();
+  if (voice) { utter.voice = voice; utter.lang = voice.lang; }
+  else         utter.lang = 'es-MX';
+
+  utter.volume = parseFloat(document.getElementById('slVol').value);
+  utter.rate   = parseFloat(document.getElementById('slRate').value);
+  utter.pitch  = (gender === 'm') ? pitchM : pitchF;
+
+  const usedGender = gender || (altMode ? nextGender : manualGender);
+
+  utter.onstart = () => {
+    ttsActive = true;
+    setSpeakUI(true, usedGender);
+    if (cfg.vibrate && navigator.vibrate) navigator.vibrate(60);
+  };
+  utter.onend = utter.onerror = () => {
+    ttsActive = false;
+    setSpeakUI(false, null);
+    if (altMode) {
+      nextGender = nextGender === 'f' ? 'm' : 'f';
+      updateTurnPill();
+    }
+    if (cfg.clearAfter) { document.getElementById('mainText').value = ''; updateCharCount(); }
+  };
+
+  synth.speak(utter);
+  if (cfg.saveHist) addHist(text, usedGender);
+}
+
+function speakCurrent() {
+  const text = document.getElementById('mainText').value;
+  const g    = altMode ? nextGender : manualGender;
+  speak(text, g);
+}
+
+function stopTTS() { synth.cancel(); ttsActive = false; setSpeakUI(false,null); }
+
+function setSpeakUI(active, gender) {
+  const btn  = document.getElementById('speakBtn');
+  const icon = document.getElementById('spIcon');
+  const txt  = document.getElementById('spText');
+  const wave = document.getElementById('volWave');
+  btn.classList.toggle('speaking', active);
+  icon.textContent = active ? '⏹' : '▶';
+  if (active && gender) txt.textContent = gender==='f' ? '👩 HABLANDO — MUJER' : '👨 HABLANDO — HOMBRE';
+  else                  txt.textContent = 'HABLAR EN VOZ ALTA';
+  wave.classList.toggle('on', active);
+}
+
+// ══════════════════════════════════════
+// CONTROL DE GÉNERO / ALTERNANCIA
+// ══════════════════════════════════════
+function setManualGender(g) {
+  manualGender = g;
+  altMode = false;
+  document.getElementById('altBtn').classList.remove('on');
+  updateVoiceBtns();
+  updateTurnPill();
+}
+
+function toggleAlt() {
+  altMode = !altMode;
+  nextGender = 'f';
+  document.getElementById('altBtn').classList.toggle('on', altMode);
+  updateVoiceBtns();
+  updateTurnPill();
+  toast(altMode ? '🔄 Alternancia ON — empieza 👩' : '🔄 Alternancia OFF');
+}
+
+function updateVoiceBtns() {
+  const f = document.getElementById('vbtnF');
+  const m = document.getElementById('vbtnM');
+  f.className = 'vbtn';
+  m.className = 'vbtn';
+  if (altMode) {
+    if (nextGender==='f') f.className='vbtn active-f';
+    else                  m.className='vbtn active-m';
+  } else {
+    if (manualGender==='f') f.className='vbtn active-f';
+    else                    m.className='vbtn active-m';
+  }
+}
+
+function updateTurnPill() {
+  const pill = document.getElementById('turnPill');
+  const txt  = document.getElementById('turnText');
+  if (altMode) {
+    pill.classList.add('show');
+    txt.textContent = `Siguiente: ${nextGender==='f'?'👩 Mujer':'👨 Hombre'}`;
+  } else {
+    pill.classList.remove('show');
+  }
+}
+
+// ══════════════════════════════════════
+// AMPLIFICADOR (Web Audio API)
+// ══════════════════════════════════════
+let ampActive = false;
+let micStream = null;
+let audioCtx  = null;
+let gainNode  = null;
+let analyser  = null;
+let vizFrame  = null;
+
+async function startAmp() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    });
+    micStream = stream;
+    audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(stream);
+    gainNode  = audioCtx.createGain();
+    analyser  = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+
+    const gain = parseFloat(document.getElementById('gainSlider').value);
+    gainNode.gain.value = gain;
+
+    // Encadenar: mic → gain → analyser → altavoz
+    src.connect(gainNode);
+    gainNode.connect(analyser);
+    gainNode.connect(audioCtx.destination);
+
+    ampActive = true;
+    setAmpUI(true);
+    startViz();
+
+    if (cfg.vibrate && navigator.vibrate) navigator.vibrate([50,30,50]);
+  } catch(e) {
+    toast('⚠️ Sin acceso al micrófono — revisa permisos');
+  }
+}
+
+function stopAmp() {
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (audioCtx)  { audioCtx.close(); audioCtx = null; }
+  if (vizFrame)  { cancelAnimationFrame(vizFrame); vizFrame = null; }
+  gainNode = null; analyser = null;
+  ampActive = false;
+  setAmpUI(false);
+}
+
+function setAmpUI(active) {
+  const btn   = document.getElementById('ampBtn');
+  const icon  = document.getElementById('ampIcon');
+  const title = document.getElementById('ampTitle');
+  const sub   = document.getElementById('ampSub');
+  btn.classList.toggle('active', active);
+  if (active) {
+    btn.textContent = '⏹';
+    icon.textContent  = '🔊';
+    title.textContent = 'Amplificando…';
+    sub.textContent   = 'Captando audio del micrófono y reproduciéndolo en el altavoz. Pulsa para detener.';
+  } else {
+    btn.textContent = '🎙️';
+    icon.textContent  = '🎙️';
+    title.textContent = 'Modo Amplificador';
+    sub.textContent   = 'Pulsa el botón para captar la voz de la otra persona y reproducirla más fuerte por el altavoz.';
+    // Resetear barras
+    document.querySelectorAll('.viz-bar').forEach(b => b.style.height='4px');
+  }
+}
+
+function startViz() {
+  const bars = document.querySelectorAll('.viz-bar');
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  function frame() {
+    analyser.getByteFrequencyData(data);
+    bars.forEach((b, i) => {
+      const v = (data[i * 2] || 0) / 255;
+      b.style.height = Math.max(4, Math.round(v * 55)) + 'px';
+    });
+    vizFrame = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+// Actualizar ganancia en tiempo real
+document.getElementById('gainSlider').addEventListener('input', function() {
+  document.getElementById('gainVal').textContent = '×' + this.value;
+  if (gainNode) gainNode.gain.value = parseFloat(this.value);
+});
+
+document.getElementById('ampBtn').addEventListener('click', () => {
+  ampActive ? stopAmp() : startAmp();
+});
+
+// ══════════════════════════════════════
+// FRASES
+// ══════════════════════════════════════
+const PHRASES = [
+  { cat:'🚨 Urgente', items:[
+    { e:'🆘', t:'Necesito ayuda urgente', big:true }
+  ]},
+  { cat:'👋 Básicas', items:[
+    {e:'👋',t:'Hola, buenos días'},{e:'🙏',t:'Por favor'},{e:'😊',t:'Gracias'},
+    {e:'✅',t:'Sí, correcto'},{e:'❌',t:'No, gracias'},{e:'⏳',t:'Un momento'}
+  ]},
+  { cat:'🗣️ Comunicación', items:[
+    {e:'🔁',t:'¿Me puedes repetir más despacio?'},{e:'✍️',t:'¿Puedes escribirlo?'},
+    {e:'👂',t:'Tengo baja audición'},{e:'📱',t:'Me comunico con esta app'}
+  ]},
+  { cat:'🛒 Compras', items:[
+    {e:'💰',t:'¿Cuánto cuesta?'},{e:'🛍️',t:'Quiero comprar esto'},
+    {e:'💳',t:'¿Aceptan tarjeta?'},{e:'🧾',t:'El cambio, por favor'}
+  ]},
+  { cat:'🏥 Salud', items:[
+    {e:'😷',t:'No me siento bien'},{e:'💊',t:'Necesito un medicamento'},
+    {e:'🏥',t:'¿Dónde hay un doctor?'},{e:'🚑',t:'Llamen a una ambulancia'}
+  ]},
+  { cat:'🗺️ Orientación', items:[
+    {e:'🚻',t:'¿Dónde está el baño?'},{e:'🚌',t:'¿Cómo llego al centro?'},
+    {e:'📍',t:'Estoy perdido, necesito orientación'},{e:'🅿️',t:'¿Hay estacionamiento?'}
+  ]}
+];
+
+function renderPhrases() {
+  const c = document.getElementById('phrasesGrid');
+  c.innerHTML = '';
+  PHRASES.forEach(cat => {
+    const h = document.createElement('div'); h.className='cat-title'; h.textContent=cat.cat; c.appendChild(h);
+    const g = document.createElement('div'); g.className='phrase-grid';
+    cat.items.forEach(p => {
+      const d = document.createElement('div');
+      d.className = 'phrase-card' + (p.big?' big':'');
+      d.innerHTML = `<span class="pe">${p.e}</span><span class="pt">${p.t}</span>`;
+      d.addEventListener('click', () => {
+        document.getElementById('mainText').value = p.t; updateCharCount();
+        speak(p.t, altMode ? nextGender : manualGender);
+      });
+      g.appendChild(d);
+    });
+    c.appendChild(g);
+  });
+}
+
+// ══════════════════════════════════════
+// HISTORIAL
+// ══════════════════════════════════════
+function addHist(text, gender) {
+  const now  = new Date();
+  const time = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  history.unshift({ text, time, avatar: gender==='m'?'👨':'👩' });
+  if (history.length>50) history.pop();
+  localStorage.setItem('va_hist', JSON.stringify(history));
+  renderHist();
+}
+
+function renderHist() {
+  const el = document.getElementById('histList');
+  if (!history.length) {
+    el.innerHTML='<div class="hist-empty"><div class="ei">📋</div><div>El historial está vacío.<br>Los textos que digas aparecerán aquí.</div></div>';
+    return;
+  }
+  const hdr = `<div class="hist-header"><div class="hist-title">${history.length} mensaje(s)</div><button class="clear-btn" id="clrBtn">Borrar todo</button></div>`;
+  const items = history.map((h,i)=>`
+    <div class="hist-item" data-i="${i}">
+      <div class="hist-avatar">${h.avatar||'👩'}</div>
+      <div class="hist-text">${esc(h.text)}</div>
+      <div class="hist-meta">${h.time}<br>▶</div>
+    </div>`).join('');
+  el.innerHTML = hdr + items;
+  document.getElementById('clrBtn').addEventListener('click',()=>{
+    history.length=0; localStorage.removeItem('va_hist'); renderHist(); toast('Historial borrado');
+  });
+  el.querySelectorAll('.hist-item').forEach(it=>{
+    it.addEventListener('click',()=>{
+      const h=history[+it.dataset.i];
+      document.getElementById('mainText').value=h.text; updateCharCount();
+      switchTab('write'); speak(h.text, h.avatar==='👨'?'m':'f');
+    });
+  });
+}
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ══════════════════════════════════════
+// HELPERS UI
+// ══════════════════════════════════════
+function updateCharCount() {
+  const v = document.getElementById('mainText').value.length;
+  document.getElementById('charCount').textContent = v+'/500';
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
+  // Detener amplificador al salir de esa pestaña
+  if (name!=='amp' && ampActive) stopAmp();
+}
+
+// ══════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════
+function saveSettings() { localStorage.setItem('va_cfg', JSON.stringify(cfg)); }
+
+const toggleDefs = [
+  ['togEnter',  'enterSpeak'],
+  ['togClear',  'clearAfter'],
+  ['togHist',   'saveHist'],
+  ['togVib',    'vibrate'],
+  ['togPitch',  'showPitch'],
+];
+toggleDefs.forEach(([id, key]) => {
+  const btn = document.getElementById(id);
+  btn.classList.toggle('on', cfg[key]);
+  btn.addEventListener('click', () => {
+    cfg[key] = !cfg[key];
+    btn.classList.toggle('on', cfg[key]);
+    saveSettings();
+    if (key === 'showPitch') applyPitchVisibility();
+  });
+});
+
+function applyPitchVisibility() {
+  document.getElementById('pitchFRow').classList.toggle('show', cfg.showPitch);
+  document.getElementById('pitchMRow').classList.toggle('show', cfg.showPitch);
+}
+
+document.getElementById('btnSettings').addEventListener('click',()=>document.getElementById('settingsOverlay').classList.add('open'));
+document.getElementById('btnCloseSet').addEventListener('click',()=>document.getElementById('settingsOverlay').classList.remove('open'));
+document.getElementById('settingsOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('settingsOverlay')) document.getElementById('settingsOverlay').classList.remove('open');
+});
+
+// ══════════════════════════════════════
+// PITCH SLIDERS
+// ══════════════════════════════════════
+document.getElementById('pitchF').addEventListener('input', function() {
+  pitchF = parseFloat(this.value);
+  document.getElementById('pitchFVal').textContent = pitchF.toFixed(1);
+  document.getElementById('pitchF-label').textContent = 'Tono '+pitchF.toFixed(1);
+});
+document.getElementById('pitchM').addEventListener('input', function() {
+  pitchM = parseFloat(this.value);
+  document.getElementById('pitchMVal').textContent = pitchM.toFixed(1);
+  document.getElementById('pitchM-label').textContent = 'Tono '+pitchM.toFixed(1);
+});
+
+// ══════════════════════════════════════
+// VOLUMEN / VELOCIDAD SLIDERS
+// ══════════════════════════════════════
+document.getElementById('slVol').addEventListener('input', function(){
+  document.getElementById('slVolV').textContent = Math.round(this.value*100)+'%';
+});
+document.getElementById('slRate').addEventListener('input', function(){
+  document.getElementById('slRateV').textContent = parseFloat(this.value).toFixed(2)+'×';
+});
+
+// ══════════════════════════════════════
+// EVENTOS PRINCIPALES
+// ══════════════════════════════════════
+document.getElementById('speakBtn').addEventListener('click', speakCurrent);
+
+document.getElementById('mainText').addEventListener('input', updateCharCount);
+document.getElementById('mainText').addEventListener('keydown', e => {
+  if (e.key==='Enter' && !e.shiftKey && cfg.enterSpeak) { e.preventDefault(); speakCurrent(); }
+});
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.view)));
+
+document.querySelectorAll('.qbtn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const p=b.dataset.p;
+    document.getElementById('mainText').value=p; updateCharCount();
+    speak(p, altMode?nextGender:manualGender);
+  });
+});
+
+document.getElementById('vbtnF').addEventListener('click',()=>{ setManualGender('f'); toast('👩 Voz femenina'); });
+document.getElementById('vbtnM').addEventListener('click',()=>{ setManualGender('m'); toast('👨 Voz masculina'); });
+document.getElementById('altBtn').addEventListener('click', toggleAlt);
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+renderPhrases();
+renderHist();
+applyPitchVisibility();
+updateCharCount();
+updateVoiceBtns();
+updateTurnPill();
+
+// ══════════════════════════════════════
+// SERVICE WORKER (PWA offline)
+// ══════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+</script>
+</body>
+</html>
