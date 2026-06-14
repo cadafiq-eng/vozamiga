@@ -207,21 +207,22 @@ input[type=range]::-webkit-slider-thumb {
 /* ═══ VIEW: AMPLIFICAR ═══ */
 .amp-wrap {
   flex:1; display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  padding:20px; gap:20px;
+  align-items:center;
+  overflow-y:auto; overflow-x:hidden;
+  padding:14px 16px 20px; gap:12px;
 }
 .amp-status {
   text-align:center; display:flex; flex-direction:column;
-  align-items:center; gap:12px;
+  align-items:center; gap:6px; flex-shrink:0;
 }
-.amp-icon { font-size:64px; line-height:1; }
-.amp-title { font-size:22px; font-weight:700; }
-.amp-sub   { font-size:14px; color:var(--muted); max-width:260px; text-align:center; line-height:1.5; }
+.amp-icon { font-size:44px; line-height:1; }
+.amp-title { font-size:18px; font-weight:700; }
+.amp-sub   { font-size:13px; color:var(--muted); max-width:280px; text-align:center; line-height:1.4; }
 
 /* Visualizador de audio */
 .audio-viz {
   display:flex; align-items:center; gap:4px;
-  height:60px; width:200px; justify-content:center;
+  height:40px; width:200px; justify-content:center; flex-shrink:0;
 }
 .viz-bar {
   width:6px; background:var(--accent);
@@ -231,9 +232,9 @@ input[type=range]::-webkit-slider-thumb {
 
 /* Botón amplificar grande */
 .amp-btn {
-  width:140px; height:140px; border-radius:50%;
+  width:110px; height:110px; border-radius:50%;
   background:var(--panel); border:3px solid rgba(0,212,170,0.3);
-  color:var(--text); font-size:48px; cursor:pointer;
+  color:var(--text); font-size:40px; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
   transition:all 0.2s; flex-shrink:0;
 }
@@ -250,19 +251,19 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 .amp-gain-row {
-  display:flex; align-items:center; gap:12px; width:100%; max-width:340px;
+  display:flex; align-items:center; gap:8px; width:100%; max-width:340px;
 }
-.amp-gain-lbl { font-size:12px; color:var(--muted); white-space:nowrap; width:68px; flex-shrink:0; }
+.amp-gain-lbl { font-size:11px; color:var(--muted); white-space:nowrap; width:72px; flex-shrink:0; }
 
 /* Panel anti-feedback */
 .amp-panel {
   background:var(--panel); border:1px solid rgba(0,212,170,0.15);
-  border-radius:var(--r); padding:12px 14px;
-  display:flex; flex-direction:column; gap:10px;
-  width:100%; max-width:340px;
+  border-radius:var(--r); padding:9px 12px;
+  display:flex; flex-direction:column; gap:7px;
+  width:100%; max-width:340px; flex-shrink:0;
 }
 .amp-panel-title {
-  font-size:11px; font-weight:700; color:var(--accent);
+  font-size:10px; font-weight:700; color:var(--accent);
   letter-spacing:0.8px; text-transform:uppercase;
 }
 
