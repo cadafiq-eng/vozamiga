@@ -345,6 +345,36 @@ input[type=range]::-webkit-slider-thumb {
 }
 .hist-empty .ei { font-size:48px; opacity:0.3; }
 
+/* BANNER iOS */
+.ios-banner {
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:150;
+  background:var(--surface); border-top:2px solid rgba(0,212,170,0.3);
+  border-radius:20px 20px 0 0; padding:16px 18px 32px;
+  flex-direction:column; gap:12px;
+  animation:slideUp 0.3s ease;
+}
+.ios-banner.show { display:flex; }
+.ios-banner-close {
+  position:absolute; top:12px; right:14px;
+  background:rgba(255,255,255,0.08); border:none; border-radius:50%;
+  width:28px; height:28px; color:var(--muted); font-size:13px; cursor:pointer;
+}
+.ios-banner-title { font-size:15px; font-weight:700; color:var(--accent); }
+.ios-banner-steps { display:flex; flex-direction:column; gap:8px; }
+.ios-step {
+  display:flex; align-items:center; gap:10px; font-size:13px; line-height:1.4;
+}
+.ios-step-icon {
+  width:22px; height:22px; border-radius:50%;
+  background:var(--accent); color:#0f0f1a;
+  font-size:11px; font-weight:700; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.ios-share {
+  display:inline-block; background:rgba(0,212,170,0.15);
+  border-radius:6px; padding:1px 6px; font-size:15px;
+}
+
 /* SETTINGS */
 .settings-overlay {
   display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:flex-end;
@@ -627,6 +657,17 @@ input[type=range]::-webkit-slider-thumb {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Banner instalación iOS -->
+<div class="ios-banner" id="iosBanner">
+  <button class="ios-banner-close" id="iosBannerClose">✕</button>
+  <div class="ios-banner-title">📲 Instalar en iPhone / iPad</div>
+  <div class="ios-banner-steps">
+    <div class="ios-step"><span class="ios-step-icon">1</span>Toca el botón <strong>Compartir</strong> <span class="ios-share">⬆</span> en Safari</div>
+    <div class="ios-step"><span class="ios-step-icon">2</span>Selecciona <strong>"Añadir a pantalla de inicio"</strong></div>
+    <div class="ios-step"><span class="ios-step-icon">3</span>Toca <strong>Añadir</strong> — quedará como app</div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════
@@ -1128,6 +1169,25 @@ updateTurnPill();
 
 // Restaurar última pestaña usada (o 'write' si es la primera vez)
 switchTab(localStorage.getItem('va_tab') || 'write');
+
+// ══════════════════════════════════════
+// BANNER INSTALACIÓN iOS
+// ══════════════════════════════════════
+const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandaloneMode = window.navigator.standalone === true;
+const iosBannerDismissed = localStorage.getItem('va_ios_dismissed');
+
+if (isIos && !isInStandaloneMode && !iosBannerDismissed) {
+  // Mostrar tras 2 segundos para no interrumpir la carga
+  setTimeout(() => {
+    document.getElementById('iosBanner').classList.add('show');
+  }, 2000);
+}
+
+document.getElementById('iosBannerClose').addEventListener('click', () => {
+  document.getElementById('iosBanner').classList.remove('show');
+  localStorage.setItem('va_ios_dismissed', '1');
+});
 
 // ══════════════════════════════════════
 // SERVICE WORKER (PWA offline)
